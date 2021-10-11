@@ -23,13 +23,16 @@ function sendToCloudinary(postGroup: UploadPost[]): void {
         tags,
       },
       function (error, result) {
-        console.log(result, error);
+        if (error) {
+          console.log(error);
+        }
       }
     );
   });
 }
 
 async function transform() {
+  let postRequestError = null;
   // fetch the posts from Instagram
   const posts = await axios
     .get<InstagramResponse>(
@@ -43,10 +46,8 @@ async function transform() {
       const results: Post[] = [];
       results.push(...responseData?.data);
       const promises: any[] = [];
-      /**
-       * If maxPosts option specified, then check if there is a next field in the response data and the results' length <= maxPosts
-       * otherwise, fetch as more as it can.
-       */
+
+      // make sure we get all the posts
       while (responseData?.paging.next && results.length <= MAX_POSTS) {
         promises.push(await axios(responseData.paging.next));
       }
@@ -55,7 +56,10 @@ async function transform() {
       );
       return results;
     })
-    .catch((error) => console.log(error));
+    .catch((error) => {
+      postRequestError = error;
+      console.log(error);
+    });
 
   const cloudinaryCollection: UploadPost[] = [];
 
@@ -95,6 +99,17 @@ async function transform() {
 
   cloudinaryCollection.sort((a, b) => a.createdDate - b.createdDate);
   sendToCloudinary(cloudinaryCollection);
+
+  if (!postRequestError && posts?.length) {
+    axios
+      .post(process.env.NETLIFY_WEBHOOK as string)
+      .then((response) => {
+        console.log("triggered Netlify build");
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
+  }
 
   //   fs.writeFile("test.json", JSON.stringify(cloudinaryCollection, null, 2), (err: any) => {
   //     if (err) {
