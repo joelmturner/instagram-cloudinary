@@ -33,3 +33,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: yarn
       - run: yarn start
+      - env:
+          INSTAGRAM_ACCESS_TOKEN: ${{secrets.INSTAGRAM_ACCESS_TOKEN}}
+          INSTAGRAM_ID: ${{secrets.INSTAGRAM_ID}}
+          CLOUDINARY_CLOUD_NAME: ${{secrets.CLOUDINARY_CLOUD_NAME}}
+          CLOUDINARY_API_KEY: ${{secrets.CLOUDINARY_API_KEY}}
+          CLOUDINARY_API_SECRET: ${{secrets.CLOUDINARY_API_SECRET}}
+          NETLIFY_WEBHOOK: ${{secrets.NETLIFY_WEBHOOK}}
