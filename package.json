@@ -1,0 +1,21 @@
+{
+    "name": "instagram-cloudinary",
+    "version": "1.0.0",
+    "main": "src/index.js",
+    "author": "@joelmturner",
+    "license": "MIT",
+    "private": true,
+    "devDependencies": {
+        "@types/node": "^16.10.3",
+        "ts-node": "^10.2.1",
+        "typescript": "^4.4.3"
+    },
+    "scripts": {
+        "start": "npx ts-node './src/index.ts'"
+    },
+    "dependencies": {
+        "axios": "^0.22.0",
+        "cloudinary": "^1.27.0",
+        "dotenv": "^10.0.0"
+    }
+}
