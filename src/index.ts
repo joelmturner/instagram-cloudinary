@@ -1,8 +1,7 @@
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
 import cloudinary from "cloudinary";
 import { HASHTAG_CONFIG, MAX_POSTS } from "./constants";
 import { InstagramResponse, Post, UploadPost } from "./types";
-
 require("dotenv").config();
 
 cloudinary.v2.config({
@@ -12,60 +11,62 @@ cloudinary.v2.config({
   secure: true,
 });
 
-function sendToCloudinary(postGroup: UploadPost[]): void {
-  postGroup.forEach(({ public_id, folder, overwrite, tags, url }) => {
-    cloudinary.v2.uploader.upload(
-      url,
-      {
-        public_id,
-        folder,
-        overwrite,
-        tags,
-      },
-      function (error, result) {
-        if (error) {
-          console.log(error);
-        }
-      }
-    );
+async function sendToCloudinary(postGroup: UploadPost[]) {
+  console.log("🚀 uploading to Cloudinary");
+  const resolves = postGroup.map(async ({ public_id, folder, overwrite, tags, url }) => {
+    try {
+      return new Promise((resolve, reject) => {
+        cloudinary.v2.uploader.upload(
+          url,
+          {
+            public_id,
+            folder,
+            overwrite,
+            tags,
+          },
+          function (error) {
+            if (error) {
+              reject(error);
+            } else {
+              resolve("SUCCESS");
+            }
+          }
+        );
+      });
+    } catch (error_1) {
+      console.log("😿 Cloudinary upload error", error_1);
+    }
   });
+
+  // make sure all were successful
+  const successfullyResolved = (await Promise.all(resolves)).every((resolve) => !!resolve);
+
+  return successfullyResolved ? "SUCCESS" : "ERROR";
 }
 
-async function transform() {
-  let postRequestError = null;
-  // fetch the posts from Instagram
-  const posts = await axios
-    .get<InstagramResponse>(
-      `https://graph.facebook.com/v12.0/${process.env.INSTAGRAM_ID}/media?fields=media_url,thumbnail_url,caption,media_type,like_count,shortcode,timestamp,comments_count,username,children{media_url},permalink,comments.limit(3){text}&limit=${MAX_POSTS}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
-    )
-    .then(async (response: AxiosResponse<InstagramResponse> | null | void) => {
-      const responseData = response?.data;
-      if (!responseData) {
-        return;
-      }
-      const results: Post[] = [];
-      results.push(...responseData?.data);
-      const promises: any[] = [];
+async function fetchInstagramPosts(postRequestError) {
+  try {
+    console.log("🚀 fetching Instagram posts");
+    const response = await axios.get<InstagramResponse>(
+      `https://graph.facebook.com/v12.0/${process.env.INSTAGRAM_ID}/media?fields=media_url,caption,media_type,timestamp,username,children{media_url},permalink,comments.limit(3){text}&limit=${MAX_POSTS}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
+    );
+    return response?.data?.data;
+  } catch (error) {
+    postRequestError = error;
+    console.log("😿 Instagram fetch error", error);
+  }
+}
 
-      // make sure we get all the posts
-      while (responseData?.paging.next && results.length <= MAX_POSTS) {
-        promises.push(await axios(responseData.paging.next));
-      }
-      Promise.all(promises).then((responses) =>
-        responses.forEach((response) => results.push(response?.data))
-      );
-      return results;
-    })
-    .catch((error) => {
-      postRequestError = error;
-      console.log(error);
-    });
-
+function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
+  console.log("🚀 converting posts to Cloudinary");
   const cloudinaryCollection: UploadPost[] = [];
 
   // check for hashtags in the posts and add to contents
   HASHTAG_CONFIG.forEach((config) => {
     const postGroup = posts?.filter((post) => {
+      if (post.media_type !== "IMAGE") {
+        return false;
+      }
       const comments =
         post?.comments?.data?.reduce((acc, comment) => {
           acc = `${acc} ${comment?.text}`;
@@ -97,20 +98,39 @@ async function transform() {
     }
   });
 
-  cloudinaryCollection.sort((a, b) => a.createdDate - b.createdDate);
-  sendToCloudinary(cloudinaryCollection);
+  return cloudinaryCollection;
+}
 
-  if (!postRequestError && posts?.length) {
-    axios
-      .post(process.env.NETLIFY_WEBHOOK as string)
-      .then((response) => {
-        console.log("triggered Netlify build");
-      })
-      .catch((error) => {
-        console.log("error", error);
-      });
+async function instagramToCloudinary() {
+  let postRequestError = null;
+
+  // fetch the posts from Instagram
+  const posts = await fetchInstagramPosts(postRequestError);
+
+  if (posts?.length) {
+    // convert the posts by hashtags
+    const cloudinaryCollection: UploadPost[] = convertInstagramPostToCloudinaryEntity(posts);
+
+    // sort the posts by id which is the timestamp of the post
+    cloudinaryCollection.sort((a, b) => Number(a.public_id) - Number(b.public_id));
+
+    // upload to Cloudinary
+    const uploadStatus = await sendToCloudinary(cloudinaryCollection);
+
+    // trigger a build if posts are pulled successfully
+    if (!postRequestError && uploadStatus === "SUCCESS") {
+      axios
+        .post(process.env.NETLIFY_WEBHOOK as string)
+        .then(() => {
+          console.log("🚀 triggered Netlify build");
+        })
+        .catch((error) => {
+          console.log("😿 Netlify trigger error", error);
+        });
+    }
   }
 
+  // for local debugging
   //   fs.writeFile("test.json", JSON.stringify(cloudinaryCollection, null, 2), (err: any) => {
   //     if (err) {
   //       console.error(err);
@@ -120,4 +140,5 @@ async function transform() {
   //   });
 }
 
-transform();
+// fire the script
+instagramToCloudinary();
