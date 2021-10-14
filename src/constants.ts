@@ -33,4 +33,4 @@ export const HASHTAG_CONFIG = [
   },
 ];
 
-export const MAX_POSTS = 1500;
+export const MAX_POSTS = 500;
