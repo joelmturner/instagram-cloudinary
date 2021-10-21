@@ -61,7 +61,7 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
   console.log("🚀 converting posts to Cloudinary");
   const cloudinaryCollection: UploadPost[] = [];
 
-  // check for hashtags in the posts and add to contents
+  // check for hashtags in the posts and add to collection
   HASHTAG_CONFIG.forEach((config) => {
     const postGroup = posts?.filter((post) => {
       if (post.media_type !== "IMAGE") {
@@ -79,15 +79,18 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
 
     if (postGroup?.length) {
       postGroup.forEach((post) => {
-        const found = cloudinaryCollection.find((uploadPost) => uploadPost.public_id === post.id);
+        const timestamp = new Date(post.timestamp).valueOf();
+        const combinedId = `${timestamp}_${post.id}`;
+        const found = cloudinaryCollection.find(
+          (uploadPost) => uploadPost.public_id === combinedId
+        );
+
         if (found) {
           found.tags = [...found.tags, config.id];
         } else {
-          const timestamp = new Date(post.timestamp).valueOf();
-
           cloudinaryCollection.push({
             url: post.media_url,
-            public_id: `${timestamp}`,
+            public_id: combinedId,
             folder: "illustration",
             overwrite: true,
             tags: [config.id],
@@ -110,9 +113,6 @@ async function instagramToCloudinary() {
   if (posts?.length) {
     // convert the posts by hashtags
     const cloudinaryCollection: UploadPost[] = convertInstagramPostToCloudinaryEntity(posts);
-
-    // sort the posts by id which is the timestamp of the post
-    cloudinaryCollection.sort((a, b) => Number(a.public_id) - Number(b.public_id));
 
     // upload to Cloudinary
     const uploadStatus = await sendToCloudinary(cloudinaryCollection);

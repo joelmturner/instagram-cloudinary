@@ -7,12 +7,8 @@ export type Post = {
   media_url: string;
   caption?: string;
   media_type: "IMAGE" | "VIDEO" | "AUDIO";
-  like_count: number;
-  shortcode: string;
   timestamp: string;
   comments_count: number;
-  username: "joelmturner" | string;
-  permalink: string;
   id: string;
   comments?: {
     data: Comment[];
