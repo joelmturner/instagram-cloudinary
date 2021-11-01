@@ -64,9 +64,11 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
   // check for hashtags in the posts and add to collection
   HASHTAG_CONFIG.forEach((config) => {
     const postGroup = posts?.filter((post) => {
+      // making sure the post is an image instead of video
       if (post.media_type !== "IMAGE") {
         return false;
       }
+      // combines the text from the first 3 comments
       const comments =
         post?.comments?.data?.reduce((acc, comment) => {
           acc = `${acc} ${comment?.text}`;
@@ -74,20 +76,26 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
         }, "") ?? "";
 
       const content = `${post?.caption} ${comments}`;
+      // check to see if our regex matches anything in the combined string
       return content.match(config.regex);
     });
 
+    // loop over the posts and add to stored variable
     if (postGroup?.length) {
       postGroup.forEach((post) => {
         const timestamp = new Date(post.timestamp).valueOf();
+        // using a date value as id so it's easier to sort by date
         const combinedId = `${timestamp}_${post.id}`;
+        // see if this post is already in our collection
         const found = cloudinaryCollection.find(
           (uploadPost) => uploadPost.public_id === combinedId
         );
 
         if (found) {
+          // combine tags on the entity
           found.tags = [...found.tags, config.id];
         } else {
+          // create entity
           cloudinaryCollection.push({
             url: post.media_url,
             public_id: combinedId,
