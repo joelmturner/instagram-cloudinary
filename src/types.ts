@@ -6,13 +6,16 @@ export type Comment = {
 export type Post = {
   media_url: string;
   caption?: string;
-  media_type: "IMAGE" | "VIDEO" | "AUDIO";
+  media_type: "IMAGE" | "VIDEO" | "AUDIO" | "CAROUSEL_ALBUM";
   timestamp: string;
   comments_count: number;
   id: string;
   comments?: {
     data: Comment[];
   };
+  children?: {
+    data: {media_url: string, id: string}[]
+  }
 };
 
 export type PostConfig = {

@@ -65,7 +65,7 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
   HASHTAG_CONFIG.forEach((config) => {
     const postGroup = posts?.filter((post) => {
       // making sure the post is an image instead of video
-      if (post.media_type !== "IMAGE") {
+      if (!["IMAGE", "CAROUSEL_ALBUM"].includes(post.media_type)) {
         return false;
       }
       // combines the text from the first 3 comments
@@ -91,13 +91,17 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
           (uploadPost) => uploadPost.public_id === combinedId
         );
 
+        const url = post.media_type === 'CAROUSEL_ALBUM' ? post.children?.data[0].media_url ?? post.media_url : post.media_url
+
         if (found) {
           // combine tags on the entity
+          console.log("📸 adding new tags");
           found.tags = [...found.tags, config.id];
         } else {
+            console.log("📸 adding a new image to Cloudinary");
           // create entity
           cloudinaryCollection.push({
-            url: post.media_url,
+            url,
             public_id: combinedId,
             folder: "illustration",
             overwrite: true,
