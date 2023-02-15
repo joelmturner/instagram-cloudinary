@@ -44,7 +44,7 @@ async function sendToCloudinary(postGroup: UploadPost[]) {
   return successfullyResolved ? "SUCCESS" : "ERROR";
 }
 
-async function fetchInstagramPosts(postRequestError) {
+async function fetchInstagramPosts(postRequestError: null | unknown) {
   try {
     console.log("🚀 fetching Instagram posts");
     const response = await axios.get<InstagramResponse>(
@@ -96,7 +96,7 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
         if (found) {
           // combine tags on the entity
           console.log("📸 adding new tags");
-          found.tags = [...found.tags, config.id];
+          found.tags = [...new Set(...found.tags, config.id)];
         } else {
             console.log("📸 adding a new image to Cloudinary");
           // create entity
