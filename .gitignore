@@ -120,3 +120,6 @@ dist
 .history
 test.json
 .nvmrc
+.vscode
+lib/
+instagramCloudinary.zip
