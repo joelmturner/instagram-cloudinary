@@ -13,33 +13,37 @@ cloudinary.v2.config({
 
 async function sendToCloudinary(postGroup: UploadPost[]) {
   console.log("🚀 uploading to Cloudinary");
-  const resolves = postGroup.map(async ({ public_id, folder, overwrite, tags, url }) => {
-    try {
-      return new Promise((resolve, reject) => {
-        cloudinary.v2.uploader.upload(
-          url,
-          {
-            public_id,
-            folder,
-            overwrite,
-            tags,
-          },
-          function (error) {
-            if (error) {
-              reject(error);
-            } else {
-              resolve("SUCCESS");
+  const resolves = postGroup.map(
+    async ({ public_id, folder, overwrite, tags, url }) => {
+      try {
+        return new Promise((resolve, reject) => {
+          cloudinary.v2.uploader.upload(
+            url,
+            {
+              public_id,
+              folder,
+              overwrite,
+              tags,
+            },
+            function (error) {
+              if (error) {
+                reject(error);
+              } else {
+                resolve("SUCCESS");
+              }
             }
-          }
-        );
-      });
-    } catch (error_1) {
-      console.log("😿 Cloudinary upload error", error_1);
+          );
+        });
+      } catch (error_1) {
+        console.log("😿 Cloudinary upload error", error_1);
+      }
     }
-  });
+  );
 
   // make sure all were successful
-  const successfullyResolved = (await Promise.all(resolves)).every((resolve) => !!resolve);
+  const successfullyResolved = (await Promise.all(resolves)).every(
+    resolve => !!resolve
+  );
 
   return successfullyResolved ? "SUCCESS" : "ERROR";
 }
@@ -62,8 +66,8 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
   const cloudinaryCollection: UploadPost[] = [];
 
   // check for hashtags in the posts and add to collection
-  HASHTAG_CONFIG.forEach((config) => {
-    const postGroup = posts?.filter((post) => {
+  HASHTAG_CONFIG.forEach(config => {
+    const postGroup = posts?.filter(post => {
       // making sure the post is an image instead of video
       if (!["IMAGE", "CAROUSEL_ALBUM"].includes(post.media_type)) {
         return false;
@@ -82,23 +86,26 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
 
     // loop over the posts and add to stored variable
     if (postGroup?.length) {
-      postGroup.forEach((post) => {
+      postGroup.forEach(post => {
         const timestamp = new Date(post.timestamp).valueOf();
         // using a date value as id so it's easier to sort by date
         const combinedId = `${timestamp}_${post.id}`;
         // see if this post is already in our collection
         const found = cloudinaryCollection.find(
-          (uploadPost) => uploadPost.public_id === combinedId
+          uploadPost => uploadPost.public_id === combinedId
         );
 
-        const url = post.media_type === 'CAROUSEL_ALBUM' ? post.children?.data[0].media_url ?? post.media_url : post.media_url
+        const url =
+          post.media_type === "CAROUSEL_ALBUM"
+            ? post.children?.data[0].media_url ?? post.media_url
+            : post.media_url;
 
         if (found) {
           // combine tags on the entity
           console.log("📸 adding new tags");
           found.tags = [...new Set(...found.tags, config.id)];
         } else {
-            console.log("📸 adding a new image to Cloudinary");
+          //   console.log("📸 adding a new image to Cloudinary");
           // create entity
           cloudinaryCollection.push({
             url,
@@ -116,7 +123,7 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
   return cloudinaryCollection;
 }
 
-async function instagramToCloudinary() {
+export async function instagramToCloudinary() {
   let postRequestError = null;
 
   // fetch the posts from Instagram
@@ -124,7 +131,8 @@ async function instagramToCloudinary() {
 
   if (posts?.length) {
     // convert the posts by hashtags
-    const cloudinaryCollection: UploadPost[] = convertInstagramPostToCloudinaryEntity(posts);
+    const cloudinaryCollection: UploadPost[] =
+      convertInstagramPostToCloudinaryEntity(posts);
 
     // upload to Cloudinary
     const uploadStatus = await sendToCloudinary(cloudinaryCollection);
@@ -136,9 +144,11 @@ async function instagramToCloudinary() {
         .then(() => {
           console.log("🚀 triggered Netlify build");
         })
-        .catch((error) => {
+        .catch(error => {
           console.log("😿 Netlify trigger error", error);
         });
+    } else {
+      console.log("Not firing Netlify ", uploadStatus);
     }
   }
 
@@ -153,4 +163,4 @@ async function instagramToCloudinary() {
 }
 
 // fire the script
-instagramToCloudinary();
+// instagramToCloudinary();

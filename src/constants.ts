@@ -32,6 +32,10 @@ export const HASHTAG_CONFIG = [
     regex: /#ink.+?2022/gi,
   },
   {
+    id: "inktober2023",
+    regex: /#ink.+?2023/gi,
+  },
+  {
     id: "handletteredabcs_2016",
     regex: /#handletteredabcs_2016/gi,
   },
