@@ -16,7 +16,7 @@
     },
     "scripts": {
         "start": "npx ts-node './src/index.ts'",
-        "build": "esbuild src/index.ts --bundle --platform=node --outfile=lib/index.js && zip -r instagramCloudinary.zip lib/"
+        "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js && zip dist/instagramCloudinary.zip dist/index.js"
     },
     "dependencies": {}
 }

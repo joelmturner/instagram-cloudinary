@@ -121,5 +121,4 @@ dist
 test.json
 .nvmrc
 .vscode
-lib/
-instagramCloudinary.zip
+.DS_Store

@@ -129,6 +129,8 @@ export async function instagramToCloudinary() {
   // fetch the posts from Instagram
   const posts = await fetchInstagramPosts(postRequestError);
 
+  let output = "NO POSTS";
+
   if (posts?.length) {
     // convert the posts by hashtags
     const cloudinaryCollection: UploadPost[] =
@@ -139,18 +141,23 @@ export async function instagramToCloudinary() {
 
     // trigger a build if posts are pulled successfully
     if (!postRequestError && uploadStatus === "SUCCESS") {
-      axios
+      await axios
         .post(process.env.NETLIFY_WEBHOOK as string)
         .then(() => {
           console.log("🚀 triggered Netlify build");
+          output = "SUCCESS";
         })
         .catch(error => {
           console.log("😿 Netlify trigger error", error);
+          output = "ERROR";
         });
     } else {
       console.log("Not firing Netlify ", uploadStatus);
+      output = "ERROR";
     }
   }
+
+  return output;
 
   // for local debugging
   //   fs.writeFile("test.json", JSON.stringify(cloudinaryCollection, null, 2), (err: any) => {
