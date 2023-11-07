@@ -8,6 +8,10 @@ export const HASHTAG_CONFIG = [
     regex: /#joelmturner_featured/gi,
   },
   {
+    id: "jmt_dorbs",
+    regex: /#jmt_dorbs/gi,
+  },
+  {
     id: "letterclash",
     regex: /#letterclash/gi,
   },
