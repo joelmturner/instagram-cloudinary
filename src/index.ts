@@ -2,7 +2,13 @@ import axios from "axios";
 import cloudinary from "cloudinary";
 import { HASHTAG_CONFIG, MAX_POSTS } from "./constants";
 import { InstagramResponse, Post, UploadPost } from "./types";
+import fs from "fs";
 require("dotenv").config();
+const dir = "./localDump";
+
+if (process.env.LOCAL_DUMP && !fs.existsSync(dir)) {
+  fs.mkdirSync(dir);
+}
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -61,7 +67,9 @@ async function fetchInstagramPosts(postRequestError: null | unknown) {
   }
 }
 
-function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
+export function convertInstagramPostToCloudinaryEntity(
+  posts: Post[]
+): UploadPost[] {
   console.log("🚀 converting posts to Cloudinary");
   const cloudinaryCollection: UploadPost[] = [];
 
@@ -103,9 +111,10 @@ function convertInstagramPostToCloudinaryEntity(posts: Post[]): UploadPost[] {
         if (found) {
           // combine tags on the entity
           console.log("📸 adding new tags");
-          found.tags = [...new Set(...found.tags, config.id)];
+          const combinedTags = Array.from(new Set([...found.tags, config.id]));
+          found.tags = combinedTags;
         } else {
-          //   console.log("📸 adding a new image to Cloudinary");
+          console.log("📸 adding a new image to Cloudinary");
           // create entity
           cloudinaryCollection.push({
             url,
@@ -129,6 +138,20 @@ export async function instagramToCloudinary() {
   // fetch the posts from Instagram
   const posts = await fetchInstagramPosts(postRequestError);
 
+  if (process.env.LOCAL_DUMP) {
+    fs.writeFile(
+      "localDump/instagramPosts.json",
+      JSON.stringify(posts, null, 2),
+      (err: any) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        //file written successfully
+      }
+    );
+  }
+
   let output = "NO POSTS";
 
   if (posts?.length) {
@@ -136,6 +159,10 @@ export async function instagramToCloudinary() {
     const cloudinaryCollection: UploadPost[] =
       convertInstagramPostToCloudinaryEntity(posts);
 
+    if (process.env.LOCAL_DUMP) {
+      localDump(cloudinaryCollection);
+      return;
+    }
     // upload to Cloudinary
     const uploadStatus = await sendToCloudinary(cloudinaryCollection);
 
@@ -158,16 +185,24 @@ export async function instagramToCloudinary() {
   }
 
   return output;
+}
 
-  // for local debugging
-  //   fs.writeFile("test.json", JSON.stringify(cloudinaryCollection, null, 2), (err: any) => {
-  //     if (err) {
-  //       console.error(err);
-  //       return;
-  //     }
-  //     //file written successfully
-  //   });
+//   for local debugging
+function localDump(cloudinaryCollection: UploadPost[]) {
+  fs.writeFile(
+    "localDump/cloudinaryPosts.json",
+    JSON.stringify(cloudinaryCollection, null, 2),
+    (err: any) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      //file written successfully
+    }
+  );
 }
 
 // fire the script
-// instagramToCloudinary();
+if (process.env.LOCAL_DUMP) {
+  instagramToCloudinary();
+}

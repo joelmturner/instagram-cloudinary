@@ -122,3 +122,4 @@ test.json
 .nvmrc
 .vscode
 .DS_Store
+localDump/
