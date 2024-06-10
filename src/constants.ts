@@ -12,6 +12,10 @@ export const HASHTAG_CONFIG = [
     regex: /#jmt_dorbs/gi,
   },
   {
+    id: "jmt_myth_puns",
+    regex: /#jmt_myth_puns/gi,
+  },
+  {
     id: "letterclash",
     regex: /#letterclash/gi,
   },
