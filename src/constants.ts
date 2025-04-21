@@ -44,9 +44,13 @@ export const HASHTAG_CONFIG = [
     regex: /#ink.+?2023/gi,
   },
   {
+    id: "inktober2024",
+    regex: /#ink.+?2024/gi,
+  },
+  {
     id: "handletteredabcs_2016",
     regex: /#handletteredabcs_2016/gi,
   },
 ];
 
-export const MAX_POSTS = 800;
+export const MAX_POSTS = 1000;

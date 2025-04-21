@@ -2,12 +2,12 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
-    "rootDir": "src",
     "isolatedModules": true,
     "strict": true,
     "noImplicitAny": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["es2015", "dom"],
-  }
+    "lib": ["es2015", "dom"]
+  },
+  "include": ["src/**/*", "jest.config.ts"]
 }

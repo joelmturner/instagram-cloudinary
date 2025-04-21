@@ -58,7 +58,7 @@ async function fetchInstagramPosts(postRequestError: null | unknown) {
   try {
     console.log("🚀 fetching Instagram posts");
     const response = await axios.get<InstagramResponse>(
-      `https://graph.facebook.com/v12.0/${process.env.INSTAGRAM_ID}/media?fields=media_url,caption,media_type,timestamp,username,children{media_url},permalink,comments.limit(3){text}&limit=${MAX_POSTS}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
+      `https://graph.facebook.com/v22.0/${process.env.INSTAGRAM_ID}/media?fields=media_url,caption,media_type,timestamp,username,children{media_url},permalink,comments.limit(3){text}&limit=${MAX_POSTS}&access_token=${process.env.INSTAGRAM_ACCESS_TOKEN}`
     );
     return response?.data?.data;
   } catch (error) {
@@ -110,11 +110,11 @@ export function convertInstagramPostToCloudinaryEntity(
 
         if (found) {
           // combine tags on the entity
-          console.log("📸 adding new tags");
+          console.log("📸 adding new tags", config.id);
           const combinedTags = Array.from(new Set([...found.tags, config.id]));
           found.tags = combinedTags;
         } else {
-          console.log("📸 adding a new image to Cloudinary");
+          console.log("📸 adding a new image to Cloudinary", config.id);
           // create entity
           cloudinaryCollection.push({
             url,
@@ -137,6 +137,8 @@ export async function instagramToCloudinary() {
 
   // fetch the posts from Instagram
   const posts = await fetchInstagramPosts(postRequestError);
+
+  console.log("posts?.length", posts?.length);
 
   if (process.env.LOCAL_DUMP) {
     fs.writeFile(
